@@ -87,6 +87,7 @@ def main():
                 git_path, git_ref = opt[0:2]
 
             name = git_ref
+            name = name.replace("/", "_")
             if '..' not in name:
                 name += '-HEAD+staged'
 
