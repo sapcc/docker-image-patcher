@@ -135,6 +135,7 @@ def main():
     # write docker file
     dockerfile = []
     dockerfile.append("FROM {}".format(args.base_image))
+    dockerfile.append("USER root")
     dockerfile.append("")
 
     for patch_name, patch_workdir in patches:
