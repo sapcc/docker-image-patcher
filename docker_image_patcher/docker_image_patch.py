@@ -17,7 +17,10 @@ def _parser():
     parser.add_argument('-b', '--base-image', required=True, help='Image to base the patched image onto')
     parser.add_argument('-r', '--repository', required=True, help='Image name / target docker repo')
     parser.add_argument('-t', '--tags', nargs='+', default=[], help='Additional tags to add to the image')
-    parser.add_argument('-w', '--docker-workdir', default='/', help='Workdir to set in the final image, defaults to /')
+    parser.add_argument('-w', '--docker-workdir', default=None,
+                        help='Workdir to set in the final image, defaults to workdir of base image')
+    parser.add_argument('--docker-user', default=None,
+                        help='User to set in the final image, defaults to user of base image')
 
     # patches
     parser.add_argument('-g', '--git', metavar='[[path/to/git] git-ref] <docker-workdir>]',
@@ -118,6 +121,17 @@ def main():
     assert not args.git
     assert not args.patch
 
+    # fetch original values from base image
+    client = docker.from_env()
+    try:
+        docker_base_image = client.images.pull(args.base_image)
+    except docker.errors.NotFound as e:
+        print("Error: Could not pull base image - {}".format(e), file=sys.stderr)
+        sys.exit(1)
+
+    orig_user = docker_base_image.attrs['Config'].get('User', '')
+    orig_workdir = docker_base_image.attrs['Config'].get('WorkDir', '/')
+
     # write docker file
     dockerfile = []
     dockerfile.append("FROM {}".format(args.base_image))
@@ -131,7 +145,11 @@ def main():
         dockerfile.append('RUN git apply "/{}"'.format(patch_name))
         dockerfile.append('')
 
-    dockerfile.append('WORKDIR "{}"'.format(args.docker_workdir))
+    workdir = args.docker_workdir or orig_workdir
+    dockerfile.append('WORKDIR "{}"'.format(workdir))
+    user = args.docker_user or orig_user
+    if user:
+        dockerfile.append('USER "{}"'.format(user))
     dockerfs.settext('/Dockerfile', '\n'.join(dockerfile))
 
     # build docker image
@@ -144,7 +162,6 @@ def main():
         tags.append("{}:{}".format(args.repository, tag))
 
     print("Building docker image...")
-    client = docker.from_env()
     try:
         image, log = client.images.build(path=dockerfs.getsyspath(''), tag=tags)
     except docker.errors.BuildError as e:
