@@ -91,7 +91,18 @@ def main():
             if '..' not in name:
                 name += '-HEAD+staged'
 
-            diff = subprocess.check_output(['git', '-C', git_path, 'diff', git_ref]).decode()
+            try:
+                diff = subprocess.check_output(['git', '-C', git_path, 'diff', git_ref]).decode()
+            except subprocess.CalledProcessError as e:
+                print('Error: Could not acquire git diff for git "{}" ({}) - is the git path correct?'
+                      ''.format(git_path, e),
+                      file=sys.stderr)
+                sys.exit(1)
+
+            if not diff.strip():
+                print('Error: Diff for git "{}" ref {} is empty!'.format(git_path, git_ref))
+                sys.exit(1)
+
             add_patch(patch_count, name, diff)
             patch_count += 1
         else:
