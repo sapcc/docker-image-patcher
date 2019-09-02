@@ -18,6 +18,8 @@ def _parser():
     parser.add_argument('-r', '--repository', required=False,
                         help='Image name / target docker repo (base image repo is used when not specified)')
     parser.add_argument('-t', '--tags', nargs='+', default=[], help='Additional tags to add to the image')
+    parser.add_argument('--tag-time', default=None, action="store_true",
+                        help="Tag image with current time (default if no tags are specified)")
     parser.add_argument('-w', '--docker-workdir', default=None,
                         help='Workdir to set in the final image, defaults to workdir of base image')
     parser.add_argument('--docker-user', default=None,
@@ -161,9 +163,9 @@ def main():
     dockerfs.settext('/Dockerfile', '\n'.join(dockerfile))
 
     # build docker image
-    default_tag = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    if default_tag not in args.tags:
-        args.tags.append(default_tag)
+    time_tag = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    if not args.tags or (args.tag_time and time_tag not in args.tags):
+        args.tags.append(time_tag)
 
     tags = []
     for tag in args.tags:
