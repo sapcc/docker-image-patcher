@@ -3,6 +3,7 @@
 import argparse
 import datetime
 import docker
+import json
 import os
 import subprocess
 import sys
@@ -35,6 +36,8 @@ def _parser():
     parser.add_argument('-p', '--patch', metavar='<path/to/patch> [path/to/patch ...] <docker-workdir>',
                         nargs='+', action='append', default=[],
                         help='Similar to --git, but uses a pregenerated patch file')
+    parser.add_argument('--push-image', default=False, action="store_true",
+                        help="Push the image after a successfull build")
 
     # other
     parser.add_argument('-q', '--quiet', default=False, action='store_true', help='Be a little more quiet')
@@ -193,9 +196,30 @@ def main():
 
     # done!
     print()
-    print("Success! Docker image can (maybe) be pushed using one of these commands")
-    for tag in tags:
-        print(" - docker push {}".format(tag))
+    if args.push_image:
+        print("Image successfully built! Will not push image to dockerhub")
+        for tag in tags:
+            print()
+            print("Pushing {}".format(tag))
+            last_status = "<no status information found>"
+            error = False
+            for line in client.images.push(tag, stream=True):
+                line = line.strip().decode()
+                if line:
+                    data = json.loads(line)
+                    if "error" in data:
+                        error = True
+                        print("Error: {}".format(data["error"]))
+                    if "status" in data:
+                        last_status = data["status"]
+            if not error:
+                print("Pushed {} to hub: {}".format(tag, last_status))
+            else:
+                print("Error pushing {} to hub".format(tag))
+    else:
+        print("Image successfully built! Docker image can (maybe) be pushed:")
+        for tag in tags:
+            print(" - docker push {}".format(tag))
 
 
 if __name__ == '__main__':
