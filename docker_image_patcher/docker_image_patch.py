@@ -15,7 +15,8 @@ def _parser():
 
     # docker file
     parser.add_argument('-b', '--base-image', required=True, help='Image to base the patched image onto')
-    parser.add_argument('-r', '--repository', required=True, help='Image name / target docker repo')
+    parser.add_argument('-r', '--repository', required=False,
+                        help='Image name / target docker repo (base image repo is used when not specified)')
     parser.add_argument('-t', '--tags', nargs='+', default=[], help='Additional tags to add to the image')
     parser.add_argument('-w', '--docker-workdir', default=None,
                         help='Workdir to set in the final image, defaults to workdir of base image')
@@ -57,6 +58,12 @@ def main():
     # check if we're given any patches
     if not args.git and not args.patch:
         parser.error("Neither --git nor --patch specified")
+
+    if ':' not in args.base_image:
+        parser.error("Please specify a tag for the base image")
+
+    if not args.repository:
+        args.repository = "".join(args.base_image.split(":")[:-1])
 
     # as the order of the patches is quite important, we need to look
     # into argv for the order of --patch / --git commands
