@@ -131,6 +131,8 @@ def main():
     assert not args.patch
 
     # fetch original values from base image
+    if not args.quiet:
+        print("Pulling {} ...".format(args.base_image))
     client = docker.from_env()
     try:
         docker_base_image = client.images.pull(args.base_image)
