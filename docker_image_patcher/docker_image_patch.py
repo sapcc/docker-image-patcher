@@ -197,7 +197,7 @@ def main():
     # done!
     print()
     if args.push_image:
-        print("Image successfully built! Will not push image to dockerhub")
+        print("Image successfully built! Will now push the image to the hub")
         for tag in tags:
             print()
             print("Pushing {}".format(tag))
