@@ -45,6 +45,8 @@ def _parser():
     parser.add_argument('--push-image', default=False, action="store_true",
                         help="Push the image after a successfull build")
     parser.add_argument('-q', '--quiet', default=False, action='store_true', help='Be a little more quiet')
+    parser.add_argument('-v', '--verbose', default=False, action='store_true',
+                        help='Be more verbose (show the Dockerfile before build)')
 
     return parser
 
@@ -181,6 +183,15 @@ def main():
     user = args.docker_user or orig_user
     if user:
         dockerfile.append('USER "{}"'.format(user))
+
+    if args.verbose:
+        print()
+        print(" ------ BEGIN Dockerfile ------ ")
+        print("\n".join(dockerfile))
+        print(" ------ END Dockerfile ------ ")
+        print()
+
+    # write file to disk
     dockerfs.settext('/Dockerfile', '\n'.join(dockerfile))
 
     # build docker image
