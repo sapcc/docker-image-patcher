@@ -25,6 +25,10 @@ def _parser():
                         help='Workdir to set in the final image, defaults to workdir of base image')
     parser.add_argument('--docker-user', default=None,
                         help='User to set in the final image, defaults to user of base image')
+    parser.add_argument('-c', '--run-before', default=[], nargs='*',
+                        help='List of commands to run inside the image before patching the image')
+    parser.add_argument('--run-after', default=[], nargs='*',
+                        help='List of commands to run inside the image after patching the image')
 
     # patches
     parser.add_argument('-g', '--git', metavar='[[path/to/git] git-ref] <docker-workdir>]',
@@ -152,12 +156,24 @@ def main():
     dockerfile.append("USER root")
     dockerfile.append("")
 
+    if args.run_before:
+        dockerfile.append("# Commands to run before patching")
+        for command in args.run_before:
+            dockerfile.append('RUN {}'.format(command))
+        dockerfile.append('')
+
     for patch_name, patch_workdir in patches:
         print("Adding patch", patch_name)
         dockerfile.append('# patch {}'.format(patch_name))
         dockerfile.append('COPY "{}" /'.format(patch_name))
         dockerfile.append('WORKDIR "{}"'.format(patch_workdir))
         dockerfile.append('RUN git apply "/{}"'.format(patch_name))
+        dockerfile.append('')
+
+    if args.run_after:
+        dockerfile.append("# Commands to run after patching")
+        for command in args.run_after:
+            dockerfile.append('RUN {}'.format(command))
         dockerfile.append('')
 
     workdir = args.docker_workdir or orig_workdir
