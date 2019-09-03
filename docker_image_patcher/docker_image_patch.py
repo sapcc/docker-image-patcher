@@ -36,10 +36,10 @@ def _parser():
     parser.add_argument('-p', '--patch', metavar='<path/to/patch> [path/to/patch ...] <docker-workdir>',
                         nargs='+', action='append', default=[],
                         help='Similar to --git, but uses a pregenerated patch file')
-    parser.add_argument('--push-image', default=False, action="store_true",
-                        help="Push the image after a successfull build")
 
     # other
+    parser.add_argument('--push-image', default=False, action="store_true",
+                        help="Push the image after a successfull build")
     parser.add_argument('-q', '--quiet', default=False, action='store_true', help='Be a little more quiet')
 
     return parser
