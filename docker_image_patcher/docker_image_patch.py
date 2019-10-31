@@ -230,15 +230,16 @@ def main():
             print("Pushing {}".format(tag))
             last_status = "<no status information found>"
             error = False
-            for line in client.images.push(tag, stream=True):
-                line = line.strip().decode()
-                if line:
-                    data = json.loads(line)
-                    if "error" in data:
-                        error = True
-                        print("Error: {}".format(data["error"]))
-                    if "status" in data:
-                        last_status = data["status"]
+            for lines in client.images.push(tag, stream=True):
+                lines = lines.strip().decode()
+                if lines:
+                    for line in lines.split("\n"):
+                        data = json.loads(line)
+                        if "error" in data:
+                            error = True
+                            print("Error: {}".format(data["error"]))
+                        if "status" in data:
+                            last_status = data["status"]
             if not error:
                 print("Pushed {} to hub: {}".format(tag, last_status))
             else:
