@@ -244,6 +244,7 @@ def main():
                 print("Pushed {} to hub: {}".format(tag, last_status))
             else:
                 print("Error pushing {} to hub".format(tag))
+                sys.exit(1)
     else:
         print("Image successfully built! Docker image can (maybe) be pushed:")
         for tag in tags:
