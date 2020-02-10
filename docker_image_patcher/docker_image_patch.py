@@ -44,6 +44,8 @@ def _parser():
     # docker build args
     parser.add_argument("--no-cache", default=False, action="store_true",
                         help="Disable caching of docker image layers")
+    parser.add_argument("--network", default=None,
+                        help="Set docker networking mode passed to docker build")
 
     # other
     parser.add_argument('--push-image', default=False, action="store_true",
@@ -209,7 +211,8 @@ def main():
 
     print("Building docker image...")
     try:
-        image, log = client.images.build(path=dockerfs.getsyspath(''), tag=tags, nocache=args.no_cache)
+        image, log = client.images.build(path=dockerfs.getsyspath(''), tag=tags,
+                                         nocache=args.no_cache, network_mode=args.network)
     except docker.errors.BuildError as e:
         print('Error: Build failed! {}'.format(e.msg), file=sys.stderr)
         print('Leaving docker filesystem intact for you to inspect in {}'
