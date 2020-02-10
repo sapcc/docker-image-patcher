@@ -41,6 +41,10 @@ def _parser():
                         nargs='+', action='append', default=[],
                         help='Similar to --git, but uses a pregenerated patch file')
 
+    # docker build args
+    parser.add_argument("--no-cache", default=False, action="store_true",
+                        help="Disable caching of docker image layers")
+
     # other
     parser.add_argument('--push-image', default=False, action="store_true",
                         help="Push the image after a successfull build")
@@ -205,7 +209,7 @@ def main():
 
     print("Building docker image...")
     try:
-        image, log = client.images.build(path=dockerfs.getsyspath(''), tag=tags)
+        image, log = client.images.build(path=dockerfs.getsyspath(''), tag=tags, nocache=args.no_cache)
     except docker.errors.BuildError as e:
         print('Error: Build failed! {}'.format(e.msg), file=sys.stderr)
         print('Leaving docker filesystem intact for you to inspect in {}'
