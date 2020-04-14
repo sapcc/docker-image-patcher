@@ -5,6 +5,7 @@ import datetime
 import docker
 import json
 import os
+import pathlib
 import subprocess
 import sys
 
@@ -119,7 +120,8 @@ def main():
                 name += '-HEAD+staged'
 
             try:
-                diff = subprocess.check_output(['git', '-C', git_path, 'diff', git_ref]).decode()
+                git_abs_path = str(pathlib.Path(git_path).resolve())
+                diff = subprocess.check_output(['git', '-C', git_path, 'diff', git_ref, '--', git_abs_path]).decode()
             except subprocess.CalledProcessError as e:
                 print('Error: Could not acquire git diff for git "{}" ({}) - is the git path correct?'
                       ''.format(git_path, e),
