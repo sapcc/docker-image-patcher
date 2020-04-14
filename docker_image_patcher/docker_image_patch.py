@@ -211,11 +211,21 @@ def main():
     for tag in args.tags:
         tags.append("{}:{}".format(args.repository, tag))
 
+    def print_build_log(build_log):
+        print()
+        print(" --- Docker build log ---")
+        for line in build_log:
+            if 'stream' in line:
+                print(line['stream'], end='')
+
     print("Building docker image...")
     try:
         image, log = client.images.build(path=dockerfs.getsyspath(''), tag=tags,
                                          nocache=args.no_cache, network_mode=args.network)
     except docker.errors.BuildError as e:
+        if not args.quiet:
+            print_build_log(e.build_log)
+            print()
         print('Error: Build failed! {}'.format(e.msg), file=sys.stderr)
         print('Leaving docker filesystem intact for you to inspect in {}'
               ''.format(dockerfs.getsyspath('')), file=sys.stderr)
@@ -224,11 +234,7 @@ def main():
     dockerfs.close()
 
     if not args.quiet:
-        print()
-        print(" --- Docker build log ---")
-        for line in log:
-            if 'stream' in line:
-                print(line['stream'], end='')
+        print_build_log(log)
 
     # done!
     print()
