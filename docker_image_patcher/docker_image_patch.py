@@ -37,7 +37,7 @@ def _parser():
                         help='Generate a patch from git. Has 1-3 arguments. The first (optional) argument is '
                              'the path to the git, defaults to cwd. The second (optional) is the git-ref, e.g. '
                              'a commit hash, defaults to HEAD. The third (required) argument is the path '
-                             'insode the docker image where the patch command will be executed.')
+                             'inside the docker image where the patch command will be executed.')
     parser.add_argument('-p', '--patch', metavar='<path/to/patch> [path/to/patch ...] <docker-workdir>',
                         nargs='+', action='append', default=[],
                         help='Similar to --git, but uses a pregenerated patch file')
