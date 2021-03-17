@@ -200,7 +200,7 @@ def main():
         print()
 
     # write file to disk
-    dockerfs.settext('/Dockerfile', '\n'.join(dockerfile))
+    dockerfs.settext('/Dockerfile', '\n'.join(dockerfile) + '\n')
 
     # build docker image
     time_tag = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
