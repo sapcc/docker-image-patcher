@@ -95,7 +95,7 @@ def main():
             git_patch_order.append('patch')
 
     # create docker filesystem
-    dockerfs = fs.tempfs.TempFS("docker-live-patch", auto_clean=True)
+    dockerfs = fs.tempfs.TempFS("docker-live-patch", auto_clean=False)
 
     # generate patchset
     def add_patch(patch_count, name, diff):
@@ -219,9 +219,11 @@ def main():
                 print(line['stream'], end='')
 
     print("Building docker image...")
+    build_succeeded = False
     try:
         image, log = client.images.build(path=dockerfs.getsyspath(''), tag=tags,
                                          nocache=args.no_cache, network_mode=args.network)
+        build_succeeded = True
     except docker.errors.BuildError as e:
         if not args.quiet:
             print_build_log(e.build_log)
@@ -230,8 +232,10 @@ def main():
         print('Leaving docker filesystem intact for you to inspect in {}'
               ''.format(dockerfs.getsyspath('')), file=sys.stderr)
         sys.exit(1)
-
-    dockerfs.close()
+    finally:
+        if build_succeeded:
+            dockerfs.clean()
+        dockerfs.close()
 
     if not args.quiet:
         print_build_log(log)
