@@ -35,6 +35,9 @@ commit hash or a range, which will then be given to `git diff` to create the pat
 `--git` and `--patch` can be used multiple times. The order in which they are supplied matters, as
 this is also the order the patches are applied in.
 
+Other convenience functions include running commands inside the image via `-c / --run-before` or
+`--run-after` and copying files or directories into the image via `--copy`.
+
 ## Examples
 Add patch `blubb.patch` to image `foo:latest`, resulting in an image `bar:special-fix`:
 ```shell

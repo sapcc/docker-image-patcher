@@ -6,6 +6,7 @@ import docker
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 
@@ -30,6 +31,10 @@ def _parser():
                         help='List of commands to run inside the image before patching the image')
     parser.add_argument('--run-after', default=[], nargs='*',
                         help='List of commands to run inside the image after patching the image')
+    parser.add_argument('--copy', default=[], nargs=2, action='append', metavar=('SRC_ON_FS', 'DEST_ON_DOCKER'),
+                        help='Copy files or directories into docker container. Executed before patch operations '
+                             'and commands. Items will be copied to a temporary directory before build is run. '
+                             'Can be specified multiple times')
 
     # patches
     parser.add_argument('-g', '--git', metavar='[[path/to/git] git-ref] <docker-workdir>]',
@@ -143,6 +148,21 @@ def main():
                 add_patch(patch_count, name, diff)
                 patch_count += 1
 
+    copy_files = []
+    if args.copy:
+        # copy files to dockerfs
+        for n, (copy_from, copy_to) in enumerate(args.copy):
+            print("Copying {} to docker tempfs".format(copy_from))
+            copy_from = pathlib.Path(copy_from).expanduser()
+            dest_dir = pathlib.Path("copy-{:08d}".format(n))
+            dockerfs.makedir(dest_dir.name)
+            dest_path = pathlib.Path(dockerfs.getsyspath('')) / dest_dir / copy_from.name
+            if copy_from.is_dir():
+                shutil.copytree(copy_from, dest_path)
+            else:
+                shutil.copy(copy_from, dest_path)
+            copy_files.append((str(dest_dir / copy_from.name), copy_to))
+
     # assert everything has been processed
     assert not args.git
     assert not args.patch
@@ -165,6 +185,12 @@ def main():
     dockerfile.append("FROM {}".format(args.base_image))
     dockerfile.append("USER root")
     dockerfile.append("")
+
+    if copy_files:
+        dockerfile.append("# Files or directories to copy into the image")
+        for copy_from, copy_to in copy_files:
+            dockerfile.append("COPY {}".format(json.dumps([copy_from, copy_to])))
+        dockerfile.append('')
 
     if args.run_before:
         dockerfile.append("# Commands to run before patching")
