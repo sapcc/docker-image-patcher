@@ -79,8 +79,8 @@ def main():
                          ''.format(arg))
 
     # check if we're given any patches
-    if not args.git and not args.patch:
-        parser.error("Neither --git nor --patch specified")
+    if not (args.git or args.patch or args.run_before or args.run_after or args.copy):
+        parser.error("Neither --git, --patch, --run-before, --run-after or --copy specified - nothing to do")
 
     if ':' not in args.base_image:
         parser.error("Please specify a tag for the base image")
