@@ -15,6 +15,7 @@ setup(
     classifiers=[
         'Programming Language :: Python :: 3',
         'Environment :: Console',
+        'License :: OSI Approved :: Apache Software License',
     ],
     entry_points={
         'console_scripts': [
