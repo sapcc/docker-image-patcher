@@ -8,7 +8,7 @@ setup(
     description='',
     author='Sebastian Lohff',
     author_email='sebastian.lohff@sap.com',
-    url='https://github.wdf.sap.corp/tg17/docker-image-patcher',
+    url='https://github.com/sapcc/docker-image-patcher',
     python_requires='>=3.5',
     packages=['docker_image_patcher'],
     install_requires=['fs', 'docker'],

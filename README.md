@@ -7,7 +7,7 @@ either be supplied in `.patch` file format or can be generated from a git reposi
 As usual, python3 required, virtualenv recommended. Make sure your pip is a python3-pip.
 
 ```shell
-$ pip install git+https://github.wdf.sap.corp/tg17/docker-image-patch
+$ pip install git+https://github.com/sapcc/docker-image-patcher
 ```
 
 ## Usage
