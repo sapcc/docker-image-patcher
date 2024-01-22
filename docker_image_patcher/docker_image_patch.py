@@ -248,9 +248,9 @@ def main():
     if not args.tags or (args.tag_time and time_tag not in args.tags):
         args.tags.append(time_tag)
 
-    tags = []
+    fq_tags = []
     for tag in args.tags:
-        tags.append("{}:{}".format(args.repository, tag))
+        fq_tags.append("{}:{}".format(args.repository, tag))
 
     def print_build_log(build_log):
         print()
@@ -262,7 +262,7 @@ def main():
     print("Building docker image...")
     build_succeeded = False
     try:
-        image, log = client.images.build(path=dockerfs.getsyspath(''), tag=tags,
+        image, log = client.images.build(path=dockerfs.getsyspath(''), tag=fq_tags[0],
                                          nocache=args.no_cache, network_mode=args.network)
         build_succeeded = True
     except docker.errors.BuildError as e:
@@ -281,11 +281,15 @@ def main():
     if not args.quiet:
         print_build_log(log)
 
+    # add additional tags to image
+    for tag in args.tags[1:]:
+        image.tag(tag)
+
     # done!
     print()
     if args.push_image:
         print("Image successfully built! Will now push the image to the hub")
-        for tag in tags:
+        for tag in fq_tags:
             print()
             print("Pushing {}".format(tag))
             last_status = "<no status information found>"
@@ -307,7 +311,7 @@ def main():
                 sys.exit(1)
     else:
         print("Image successfully built! Docker image can (maybe) be pushed:")
-        for tag in tags:
+        for tag in fq_tags:
             print(" - docker push {}".format(tag))
 
 
