@@ -35,6 +35,13 @@ commit hash or a range, which will then be given to `git diff` to create the pat
 `--git` and `--patch` can be used multiple times. The order in which they are supplied matters, as
 this is also the order the patches are applied in.
 
+When an image lacks the `git` or `patch` executable, the flag `--use-copy-to-apply` can be used to
+copy over the whole files referenced in the (generated) diffs. Using a `COPY` command in the
+`Dockerfile`, patching an image with this flag does not rely on any binary in the image. If
+multiple patches from multiple repositories reference the same target file, the last one wins.
+When used together with `--patch`, it's assumed that the files can be found relative to the
+current working directory.
+
 Other convenience functions include running commands inside the image via `-c / --run-before` or
 `--run-after` and copying files or directories into the image via `--copy`.
 

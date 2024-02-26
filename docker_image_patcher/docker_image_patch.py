@@ -17,6 +17,7 @@
 import argparse
 import datetime
 import docker
+import hashlib
 import json
 import os
 import pathlib
@@ -61,6 +62,8 @@ def _parser():
     parser.add_argument('-p', '--patch', metavar='<path/to/patch> [path/to/patch ...] <docker-workdir>',
                         nargs='+', action='append', default=[],
                         help='Similar to --git, but uses a pregenerated patch file')
+    parser.add_argument('--use-copy-to-apply', default=False, action="store_true",
+                        help="Instead of using git/patch to apply, copy the whole files having changes in the diff(s)")
 
     # docker build args
     parser.add_argument("--no-cache", default=False, action="store_true",
@@ -123,6 +126,27 @@ def main():
         dockerfs.settext('/' + patch_path, diff)
         patches.append((patch_path, opt[-1]))
 
+    def add_files_from_diff(diff, src_base_path, target_base_path):
+        for line in diff.splitlines():
+            # NOTE: We do not support deleting files here.
+
+            # diffs contain a line
+            # +++ b/docker_image_patcher/docker_image_patch.py
+            # for each file that's changed
+            if not line.startswith('+++ '):
+                continue
+
+            patched_file = pathlib.Path(line.strip()[len('+++ b/'):])
+            src_path = str(src_base_path / patched_file)
+            # we generate a unique name, because we don't want / in our names
+            # and using only the filename part might overlap with other (think
+            # __init__.py)
+            name = hashlib.sha1(src_path.encode('utf-8')).hexdigest()
+            dockerfs.setbinfile(f"/{name}", open(src_path, 'rb'))
+            # we add the filename in the docker directory and the target
+            # path inside the container for usage in generating the Dockerfile
+            patches.append((name, target_base_path / patched_file))
+
     patches = []
     patch_count = 0
     for n, opt_type in enumerate(git_patch_order):
@@ -152,16 +176,22 @@ def main():
                 print('Error: Diff for git "{}" ref {} is empty!'.format(git_path, git_ref))
                 sys.exit(1)
 
-            add_patch(patch_count, name, diff)
-            patch_count += 1
+            if args.use_copy_to_apply:
+                add_files_from_diff(diff, pathlib.Path(git_abs_path), opt[-1])
+            else:
+                add_patch(patch_count, name, diff)
+                patch_count += 1
         else:
             opt = args.patch.pop(0)
             for path in opt[:-1]:
                 name = os.path.basename(path)
                 with open(path) as f:
                     diff = f.read()
-                add_patch(patch_count, name, diff)
-                patch_count += 1
+                if args.use_copy_to_apply:
+                    add_files_from_diff(diff, pathlib.Path('.').resolve(), opt[-1])
+                else:
+                    add_patch(patch_count, name, diff)
+                    patch_count += 1
 
     copy_files = []
     if args.copy:
@@ -213,13 +243,20 @@ def main():
             dockerfile.append('RUN {}'.format(command))
         dockerfile.append('')
 
-    for patch_name, patch_workdir in patches:
-        print("Adding patch", patch_name)
-        dockerfile.append('# patch {}'.format(patch_name))
-        dockerfile.append('COPY "{}" /'.format(patch_name))
-        dockerfile.append('WORKDIR "{}"'.format(patch_workdir))
-        dockerfile.append('RUN git apply "/{}"'.format(patch_name))
-        dockerfile.append('')
+    if args.use_copy_to_apply:
+        for filename, target_path in patches:
+            print(f"Adding patched {target_path} via COPY")
+            dockerfile.append(f"# patch {filename}")
+            dockerfile.append('COPY "{}" "{}"'.format(filename, target_path))
+            dockerfile.append('')
+    else:
+        for patch_name, patch_workdir in patches:
+            print("Adding patch", patch_name)
+            dockerfile.append('# patch {}'.format(patch_name))
+            dockerfile.append('COPY "{}" /'.format(patch_name))
+            dockerfile.append('WORKDIR "{}"'.format(patch_workdir))
+            dockerfile.append('RUN git apply "/{}"'.format(patch_name))
+            dockerfile.append('')
 
     if args.run_after:
         dockerfile.append("# Commands to run after patching")
