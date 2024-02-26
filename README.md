@@ -26,8 +26,8 @@ generally the path inside the image where the application is installed that is a
 With `--git` a patch can be automatically generated from a local git repository. This option takes
 one to three arguments in the format of `[[path/to/git] git-ref] <docker-workdir>]`. `path/to/git`
 refers to the path to the git repo and defaults to `.`. `git-ref` can be any git reference, e.g. a
-commit hash or a range, which will then be given to `git diff` to create the patch. The defaul is
-`HEAD`, which will result in a patch with all uncommited changes.
+commit hash or a range, which will then be given to `git diff` to create the patch. The default is
+`HEAD`, which will result in a patch with all uncommitted changes.
 
 `--patch` takes a list of patches that will be applied. Multiple patches can be specified for each
 `--patch`.
@@ -44,7 +44,7 @@ Add patch `blubb.patch` to image `foo:latest`, resulting in an image `bar:specia
 $ docker-image-patch -b foo:latest -r bar -t special-fix -p blubb.patch /var/lib/my-app/
 ```
 
-Add uncommited changes in local git to image:
+Add uncommitted changes in local git to image:
 ```shell
 $ docker-image-patch -b foo:latest -r bar -t special-fix -g /var/lib/my-app/
 ```
