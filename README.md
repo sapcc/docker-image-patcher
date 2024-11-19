@@ -26,14 +26,21 @@ generally the path inside the image where the application is installed that is a
 With `--git` a patch can be automatically generated from a local git repository. This option takes
 one to three arguments in the format of `[[path/to/git] git-ref] <docker-workdir>]`. `path/to/git`
 refers to the path to the git repo and defaults to `.`. `git-ref` can be any git reference, e.g. a
-commit hash or a range, which will then be given to `git diff` to create the patch. The defaul is
-`HEAD`, which will result in a patch with all uncommited changes.
+commit hash or a range, which will then be given to `git diff` to create the patch. The default is
+`HEAD`, which will result in a patch with all uncommitted changes.
 
 `--patch` takes a list of patches that will be applied. Multiple patches can be specified for each
 `--patch`.
 
 `--git` and `--patch` can be used multiple times. The order in which they are supplied matters, as
 this is also the order the patches are applied in.
+
+When an image lacks the `git` or `patch` executable, the flag `--use-copy-to-apply` can be used to
+copy over the whole files referenced in the (generated) diffs. Using a `COPY` command in the
+`Dockerfile`, patching an image with this flag does not rely on any binary in the image. If
+multiple patches from multiple repositories reference the same target file, the last one wins.
+When used together with `--patch`, it's assumed that the files can be found relative to the
+current working directory.
 
 Other convenience functions include running commands inside the image via `-c / --run-before` or
 `--run-after` and copying files or directories into the image via `--copy`.
@@ -44,7 +51,7 @@ Add patch `blubb.patch` to image `foo:latest`, resulting in an image `bar:specia
 $ docker-image-patch -b foo:latest -r bar -t special-fix -p blubb.patch /var/lib/my-app/
 ```
 
-Add uncommited changes in local git to image:
+Add uncommitted changes in local git to image:
 ```shell
 $ docker-image-patch -b foo:latest -r bar -t special-fix -g /var/lib/my-app/
 ```
