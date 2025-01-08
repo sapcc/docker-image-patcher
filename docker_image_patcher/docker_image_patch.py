@@ -185,7 +185,11 @@ def main():
     # fetch original values from base image
     if not args.quiet:
         print("Pulling {} ...".format(args.base_image))
-    client = docker.from_env()
+    try:
+        client = docker.from_env()
+    except Exception as e:
+        print(f"Error: Could not reach docker daemon - is it running? Error was: {e}")
+        sys.exit(1)
     try:
         docker_base_image = client.images.pull(args.base_image)
     except docker.errors.NotFound as e:
