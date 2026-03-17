@@ -11,7 +11,7 @@ setup(
     url='https://github.com/sapcc/docker-image-patcher',
     python_requires='>=3.5',
     packages=['docker_image_patcher'],
-    install_requires=['fs', 'docker>=7.1.0', 'requests>=2.32.0'],
+    install_requires=['docker>=7.1.0', 'requests>=2.32.0'],
     classifiers=[
         'Programming Language :: Python :: 3',
         'Environment :: Console',
