@@ -23,8 +23,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
-
-import fs.tempfs
+import tempfile
 
 
 def _parser():
@@ -115,12 +114,12 @@ def main():
             git_patch_order.append('patch')
 
     # create docker filesystem
-    dockerfs = fs.tempfs.TempFS("docker-live-patch", auto_clean=False)
+    dockerfs = tempfile.mkdtemp(prefix="docker-live-patch")
 
     # generate patchset
     def add_patch(patch_count, name, diff):
         patch_path = "{:04d}-{}{}".format(patch_count, name, '' if name.endswith('.patch') else '.patch')
-        dockerfs.settext('/' + patch_path, diff)
+        pathlib.Path(dockerfs, patch_path).write_text(diff)
         patches.append((patch_path, opt[-1]))
 
     patches = []
@@ -170,8 +169,8 @@ def main():
             print("Copying {} to docker tempfs".format(copy_from))
             copy_from = pathlib.Path(copy_from).expanduser()
             dest_dir = pathlib.Path("copy-{:08d}".format(n))
-            dockerfs.makedir(dest_dir.name)
-            dest_path = pathlib.Path(dockerfs.getsyspath('')) / dest_dir / copy_from.name
+            pathlib.Path(dockerfs, dest_dir.name).mkdir()
+            dest_path = pathlib.Path(dockerfs) / dest_dir / copy_from.name
             if copy_from.is_dir():
                 shutil.copytree(copy_from, dest_path)
             else:
@@ -245,7 +244,7 @@ def main():
         print()
 
     # write file to disk
-    dockerfs.settext('/Dockerfile', '\n'.join(dockerfile) + '\n')
+    pathlib.Path(dockerfs, 'Dockerfile').write_text('\n'.join(dockerfile) + '\n')
 
     # build docker image
     time_tag = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -266,7 +265,7 @@ def main():
     print("Building docker image...")
     build_succeeded = False
     try:
-        image, log = client.images.build(path=dockerfs.getsyspath(''), tag=fq_tags[0],
+        image, log = client.images.build(path=dockerfs, tag=fq_tags[0],
                                          nocache=args.no_cache, network_mode=args.network)
         build_succeeded = True
     except docker.errors.BuildError as e:
@@ -275,12 +274,11 @@ def main():
             print()
         print('Error: Build failed! {}'.format(e.msg), file=sys.stderr)
         print('Leaving docker filesystem intact for you to inspect in {}'
-              ''.format(dockerfs.getsyspath('')), file=sys.stderr)
+              ''.format(dockerfs), file=sys.stderr)
         sys.exit(1)
     finally:
         if build_succeeded:
-            dockerfs.clean()
-        dockerfs.close()
+            shutil.rmtree(dockerfs)
 
     if not args.quiet:
         print_build_log(log)
